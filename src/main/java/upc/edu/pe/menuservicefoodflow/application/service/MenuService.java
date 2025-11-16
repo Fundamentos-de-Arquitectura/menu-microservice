@@ -71,6 +71,10 @@ public class MenuService {
         return dishRepository.findById(id);
     }
 
+    public Optional<Dish> getDishByIdAndUserId(Long id, Long userId) {
+        return dishRepository.findByIdAndUserId(id, userId);
+    }
+
     public List<Dish> getDishesByUserId(Long userId) {
         return dishRepository.findByUserId(userId);
     }
@@ -78,5 +82,15 @@ public class MenuService {
     @Transactional
     public void deleteDish(Long id) {
         dishRepository.deleteById(id);
+    }
+
+    @Transactional
+    public void deleteDishByIdAndUserId(Long id, Long userId) {
+        Optional<Dish> dish = dishRepository.findByIdAndUserId(id, userId);
+        if (dish.isEmpty()) {
+            throw new IllegalStateException("Dish with ID " + id + " not found for user " + userId);
+        }
+        dishRepository.deleteById(id);
+        logger.info("Deleted dish {} for user {}", id, userId);
     }
 }

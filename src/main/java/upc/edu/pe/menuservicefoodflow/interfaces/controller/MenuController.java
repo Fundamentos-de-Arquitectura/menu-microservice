@@ -53,22 +53,24 @@ public class MenuController {
     }
 
     /**
-     * Obtiene todos los platos del menú
+     * Obtiene todos los platos del menú para un usuario específico
      */
-    @GetMapping
-    public ResponseEntity<List<DishResponse>> getAllDishes() {
-        List<DishResponse> dishes = menuService.getAllDishes().stream()
+    @GetMapping("/users/{userId}")
+    public ResponseEntity<List<DishResponse>> getAllDishes(@PathVariable Long userId) {
+        List<DishResponse> dishes = menuService.getDishesByUserId(userId).stream()
                 .map(DishMapper::toResponse)
                 .collect(Collectors.toList());
         return ResponseEntity.ok(dishes);
     }
 
     /**
-     * Obtiene un plato por su ID
+     * Obtiene un plato por su ID verificando que pertenece al usuario
      */
-    @GetMapping("/{id}")
-    public ResponseEntity<DishResponse> getDishById(@PathVariable Long id) {
-        return menuService.getDishById(id)
+    @GetMapping("/users/{userId}/{id}")
+    public ResponseEntity<DishResponse> getDishById(
+            @PathVariable Long userId,
+            @PathVariable Long id) {
+        return menuService.getDishByIdAndUserId(id, userId)
                 .map(DishMapper::toResponse)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
@@ -86,11 +88,17 @@ public class MenuController {
     }
 
     /**
-     * Elimina un plato del menú
+     * Elimina un plato del menú verificando que pertenece al usuario
      */
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Map<String, String>> deleteDish(@PathVariable Long id) {
-        menuService.deleteDish(id);
-        return ResponseEntity.ok(Map.of("message", "Dish deleted successfully"));
+    @DeleteMapping("/users/{userId}/{id}")
+    public ResponseEntity<Map<String, String>> deleteDish(
+            @PathVariable Long userId,
+            @PathVariable Long id) {
+        try {
+            menuService.deleteDishByIdAndUserId(id, userId);
+            return ResponseEntity.ok(Map.of("message", "Dish deleted successfully"));
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", e.getMessage()));
+        }
     }
 }
