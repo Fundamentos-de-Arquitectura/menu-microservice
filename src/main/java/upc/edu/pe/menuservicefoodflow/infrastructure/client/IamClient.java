@@ -15,18 +15,19 @@ import java.util.Optional;
 public class IamClient {
 
     private static final Logger logger = LoggerFactory.getLogger(IamClient.class);
-    private static final String IAM_SERVICE = "http://iam-microservice";
 
     private final RestClient restClient;
 
-    public IamClient(org.springframework.web.client.RestClient.Builder restClientBuilder) {
-        this.restClient = restClientBuilder
-                .baseUrl(IAM_SERVICE)
+    public IamClient(@org.springframework.beans.factory.annotation.Value("${iam.service.url}") String iamServiceUrl) {
+        this.restClient = RestClient.builder()
+                .baseUrl(iamServiceUrl)
                 .build();
+        logger.info("IamClient initialized with URL: {}", iamServiceUrl);
     }
 
     /**
      * Valida que un usuario exista en el sistema IAM
+     * 
      * @param userId ID del usuario
      * @return Optional con los datos del usuario o vacío si no existe
      */
@@ -38,7 +39,8 @@ public class IamClient {
                     .uri("/api/v1/accounts/{userId}/user-response", userId)
                     .retrieve()
                     .onStatus(status -> status.is4xxClientError() || status.is5xxServerError(), (request, response) -> {
-                        logger.warn("HTTP error validating user {} in IAM service: Status {}", userId, response.getStatusCode());
+                        logger.warn("HTTP error validating user {} in IAM service: Status {}", userId,
+                                response.getStatusCode());
                         throw new RuntimeException("User validation failed: " + response.getStatusCode());
                     })
                     .body(Map.class);
@@ -63,4 +65,3 @@ public class IamClient {
         }
     }
 }
-
